@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt Compiler</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">Prompt Compiler</div>
+        <div class="top-actions">
+          <div class="user-block">
+            <label for="userId">User ID</label>
+            <input id="userId" type="text" />
+            <button id="copyUserId" class="ghost">Copy</button>
+          </div>
+          <button id="openSettings" class="ghost">Settings</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="compiler-panel">
+          <div id="conversation" class="conversation"></div>
+          <div class="composer">
+            <textarea id="messageInput" rows="5" placeholder="Paste your prompt to compile..."></textarea>
+            <div class="composer-actions">
+              <button id="sendBtn">Compile</button>
+            </div>
+          </div>
+          <details class="history-details">
+            <summary>View history</summary>
+            <div id="historyList" class="history-list"></div>
+            <div class="history-actions">
+              <button id="clearHistory" class="inline-link">Clear history</button>
+            </div>
+          </details>
+        </section>
+      </main>
+    </div>
+
+    <div id="settingsModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-header">
+          <h2 id="settingsTitle">Settings</h2>
+          <button id="closeSettings" class="ghost">Close</button>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-row">
+            <label for="secretsProtection">Secrets protection</label>
+            <input type="checkbox" id="secretsProtection" checked />
+          </div>
+          <div class="setting-row">
+            <label for="strictMode">Strict mode redaction</label>
+            <input type="checkbox" id="strictMode" />
+          </div>
+          <div class="setting-row">
+            <label for="optimize">Semantic optimization</label>
+            <input type="checkbox" id="optimize" checked />
+          </div>
+          <div class="setting-row">
+            <label for="optimizeLevel">Optimization level</label>
+            <select id="optimizeLevel">
+              <option value="light">Light</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="checksEnabled">Meaning check (LLM)</label>
+            <input type="checkbox" id="checksEnabled" checked />
+          </div>
+          <div class="setting-row">
+            <label for="dailyBudget">Daily budget (tokens)</label>
+            <input id="dailyBudget" type="number" min="1000" step="100" />
+          </div>
+          <div class="setting-row">
+            <label for="rpmLimit">Requests per minute</label>
+            <input id="rpmLimit" type="number" min="1" step="1" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="saveSettings">Save settings</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
