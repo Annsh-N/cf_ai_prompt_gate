@@ -1,0 +1,23 @@
+[
+  {
+    "name": "repeated_instructions",
+    "text": "You are an expert assistant. You are an expert assistant.\nPlease be concise. Please be concise.\nReturn JSON. Return JSON.\nTask: summarize an on-call incident timeline for an engineering manager."
+  },
+  {
+    "name": "secret_heavy",
+    "text": "Draft a safe handoff note.\nemail: jane@example.com\nphone: +1 (415) 555-1212\napi_key=example_token_9aB3cD4eF5gH6iJ7\nGITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456\nAuthorization: Bearer abcdefghijklmnopqrstuvwxyz123456"
+  },
+  {
+    "name": "long_context",
+    "text": "Task: compress this prompt while preserving requirements.\nContext: A customer reports intermittent failures after deployment. The service retries requests, records structured logs, emits metrics, and writes idempotency keys. The deployment changed cache TTLs, request batching, and timeout behavior. Context: A customer reports intermittent failures after deployment. The service retries requests, records structured logs, emits metrics, and writes idempotency keys. The deployment changed cache TTLs, request batching, and timeout behavior.\nOutput format: bullet points."
+  },
+  {
+    "name": "constraint_heavy",
+    "text": "Write a recruiter update. Keep it under 70 words. Include Cloudflare Workers and Durable Objects. Exclude hype. Tone: direct. Return JSON."
+  },
+  {
+    "name": "cache_repeat",
+    "text": "Please compile this for reuse. Please compile this for reuse.\nUse bullet points. Use bullet points.\nNever expose credentials. password=SuperSecretPass123!"
+  }
+]
+

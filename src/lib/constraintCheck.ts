@@ -13,6 +13,11 @@ function normalize(text: string): string {
   return text.toLowerCase();
 }
 
+function countWords(text: string): number {
+  const words = text.trim().match(/\b[\p{L}\p{N}'-]+\b/gu);
+  return words?.length ?? 0;
+}
+
 function extractWordLimit(text: string): ConstraintRule | null {
   const patterns = [
     /(?:under|less than|no more than|at most|maximum of)\s+(\d{1,5})\s+words?/i,
@@ -21,11 +26,11 @@ function extractWordLimit(text: string): ConstraintRule | null {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
-      const count = match[1];
-      const label = `under ${count} words`;
+      const count = Number(match[1]);
+      const label = `at most ${count} words`;
       return {
         label,
-        test: (optimized) => new RegExp(`${count}\\s+words?`, "i").test(optimized),
+        test: (optimized) => countWords(optimized) <= count,
       };
     }
   }
@@ -67,7 +72,7 @@ function extractIncludeExclude(text: string): ConstraintRule[] {
     const label = `exclude ${phrase}`;
     rules.push({
       label,
-      test: (optimized) => normalize(optimized).includes(normalize(phrase)),
+      test: (optimized) => !normalize(optimized).includes(normalize(phrase)),
     });
   }
   return rules;

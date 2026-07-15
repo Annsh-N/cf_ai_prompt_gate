@@ -32,7 +32,7 @@ function buildUserPrompt(redactedText: string, options: OptimizeOptions): string
   return `Optimization level: ${options.level}.\n${fixLine}${preserveLine}\nRedacted prompt:\n${redactedText}`.trim();
 }
 
-function extractJson(text: string): LLMOptimizeOutput | null {
+export function parseOptimizeJson(text: string): LLMOptimizeOutput | null {
   if (!text) return null;
   const trimmed = text.trim();
   const start = trimmed.indexOf("{");
@@ -84,12 +84,12 @@ export async function llmOptimizePrompt(
   options: OptimizeOptions
 ): Promise<{ output: LLMOptimizeOutput | null; raw: string; usage: { input_tokens?: number; output_tokens?: number } | null }> {
   const first = await runOptimize(env, redactedText, options, false);
-  const parsedFirst = extractJson(first.text);
+  const parsedFirst = parseOptimizeJson(first.text);
   if (parsedFirst) {
     return { output: parsedFirst, raw: first.text, usage: first.usage };
   }
 
   const second = await runOptimize(env, redactedText, options, true);
-  const parsedSecond = extractJson(second.text);
+  const parsedSecond = parseOptimizeJson(second.text);
   return { output: parsedSecond, raw: second.text, usage: second.usage };
 }

@@ -18,6 +18,6 @@ Examples of unacceptable behavior:
 This Code of Conduct applies within project spaces and in public spaces when an individual is representing the project.
 
 ## Enforcement
-Instances of abusive or unacceptable behavior may be reported to conduct@example.com. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive or unacceptable behavior may be reported privately to the project maintainer. All complaints will be reviewed and investigated promptly and fairly.
 
 This Code of Conduct is adapted from the Contributor Covenant.

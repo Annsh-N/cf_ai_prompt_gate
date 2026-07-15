@@ -11,7 +11,7 @@ const CHECK_SYSTEM = `You are a prompt quality checker. You MUST return STRICT J
 
 const STRICT_RETRY_SYSTEM = `${CHECK_SYSTEM}\n\nCRITICAL: Respond with JSON only. No prose. No code fences.`;
 
-function extractJson(text: string): MeaningCheckResult | null {
+export function parseMeaningCheckJson(text: string): MeaningCheckResult | null {
   if (!text) return null;
   const trimmed = text.trim();
   const start = trimmed.indexOf("{");
@@ -65,12 +65,12 @@ export async function llmCheckMeaning(
   optimizedPrompt: string
 ): Promise<{ output: MeaningCheckResult | null; raw: string; usage: { input_tokens?: number; output_tokens?: number } | null }> {
   const first = await runCheck(env, redactedText, optimizedPrompt, false);
-  const parsedFirst = extractJson(first.text);
+  const parsedFirst = parseMeaningCheckJson(first.text);
   if (parsedFirst) {
     return { output: parsedFirst, raw: first.text, usage: first.usage };
   }
 
   const second = await runCheck(env, redactedText, optimizedPrompt, true);
-  const parsedSecond = extractJson(second.text);
+  const parsedSecond = parseMeaningCheckJson(second.text);
   return { output: parsedSecond, raw: second.text, usage: second.usage };
 }

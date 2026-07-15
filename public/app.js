@@ -2,6 +2,7 @@ const el = (id) => document.getElementById(id);
 
 const state = {
   userId: "",
+  clientSecret: "",
   processing: false,
 };
 
@@ -30,11 +31,25 @@ function generateUserId() {
   return crypto.randomUUID();
 }
 
+function generateClientSecret() {
+  return `${crypto.randomUUID()}-${crypto.randomUUID()}`;
+}
+
 function loadUserId() {
-  const stored = localStorage.getItem("promptcompiler_userId");
+  const stored = localStorage.getItem("promptgate_userId");
+  const storedSecret = localStorage.getItem("promptgate_clientSecret");
   state.userId = stored || generateUserId();
-  localStorage.setItem("promptcompiler_userId", state.userId);
+  state.clientSecret = storedSecret || generateClientSecret();
+  localStorage.setItem("promptgate_userId", state.userId);
+  localStorage.setItem("promptgate_clientSecret", state.clientSecret);
   elements.userId.value = state.userId;
+}
+
+function authHeaders(extra = {}) {
+  return {
+    ...extra,
+    Authorization: `Bearer ${state.clientSecret}`,
+  };
 }
 
 function collectSettings() {
@@ -61,14 +76,18 @@ function applySettings(settings) {
 }
 
 async function fetchState() {
-  const res = await fetch(`/api/state?userId=${encodeURIComponent(state.userId)}`);
+  const res = await fetch(`/api/state?userId=${encodeURIComponent(state.userId)}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) return;
   const data = await res.json();
   applySettings(data.settings);
 }
 
 async function fetchHistory() {
-  const res = await fetch(`/api/history?userId=${encodeURIComponent(state.userId)}`);
+  const res = await fetch(`/api/history?userId=${encodeURIComponent(state.userId)}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) return;
   const data = await res.json();
   renderHistory(data.entries || []);
@@ -81,7 +100,7 @@ async function saveSettings() {
   };
   const res = await fetch("/api/state", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -96,7 +115,7 @@ async function saveSettings() {
 async function clearHistory() {
   const res = await fetch("/api/clear-history", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ userId: state.userId }),
   });
   if (!res.ok) {
@@ -251,6 +270,28 @@ function formatRedactionPreviews(items) {
     .join(" | ");
 }
 
+function appendMetric(parent, label, valueNode) {
+  const metric = document.createElement("div");
+  metric.className = "metric";
+  const strong = document.createElement("strong");
+  strong.textContent = label;
+  const span = document.createElement("span");
+  if (valueNode instanceof Node) {
+    span.appendChild(valueNode);
+  } else {
+    span.textContent = String(valueNode);
+  }
+  metric.append(strong, span);
+  parent.appendChild(metric);
+}
+
+function badge(label, kind = "") {
+  const item = document.createElement("span");
+  item.className = kind ? `badge ${kind}` : "badge";
+  item.textContent = label;
+  return item;
+}
+
 function setMetrics(exchange, report) {
   const metrics = exchange.querySelector('[data-role="metrics"]');
   if (!metrics || !report) return;
@@ -263,35 +304,37 @@ function setMetrics(exchange, report) {
   const redactionReport = report.redactionReport || { totalRedactions: 0, items: [] };
   const checks = report.checks || {};
 
-  const cacheBadge = cache.hit
-    ? '<span class="badge success">HIT</span>'
-    : '<span class="badge warning">MISS</span>';
-
   const checksPassed =
     checks.constraintCheck?.passed && (checks.meaningCheck?.passed ?? true) && !checks.optimizationFailed;
-  const checksBadge = checks.enabled
-    ? `<span class="badge ${checksPassed ? "success" : "error"}">${checksPassed ? "PASS" : "ISSUES"}</span>`
-    : '<span class="badge">OFF</span>';
-
   const redactionSummary = formatRedactionSummary(redactionReport.items);
   const redactionPreviews = formatRedactionPreviews(redactionReport.items);
 
-  metrics.innerHTML = `
-    <div class="metric"><strong>Tokens</strong><span>${tokens.original_est} → ${tokens.compiled_est} (${tokens.saved_pct}%)</span></div>
-    <div class="metric"><strong>Cost</strong><span>${formatMoney(cost.original_est_usd)} → ${formatMoney(cost.compiled_est_usd)} (${cost.saved_pct}%)</span></div>
-    <div class="metric"><strong>Cache</strong><span>${cacheBadge} ${cache.key_short ? `#${cache.key_short}` : ""}</span></div>
-    <div class="metric"><strong>Timing</strong><span>${timing.redaction}ms / ${timing.normalization}ms / ${timing.optimize_llm}ms</span></div>
-    <div class="metric"><strong>Redactions</strong><span>${redactionSummary}</span></div>
-    <div class="metric"><strong>Checks</strong><span>${checksBadge}</span></div>
-    <div class="metric"><strong>Budget</strong><span>${usage.daily_remaining_tokens} remaining</span></div>
-    <div class="metric"><strong>RPM</strong><span>${usage.rpm_used}/${usage.rpm_limit}</span></div>
-  `;
+  metrics.replaceChildren();
+
+  appendMetric(metrics, "Tokens", `${tokens.original_est} -> ${tokens.compiled_est} (${tokens.saved_pct}%)`);
+  appendMetric(
+    metrics,
+    "Cost",
+    `${formatMoney(cost.original_est_usd)} -> ${formatMoney(cost.compiled_est_usd)} (${cost.saved_pct}%)`
+  );
+
+  const cacheNode = document.createDocumentFragment();
+  cacheNode.appendChild(cache.hit ? badge("HIT", "success") : badge("MISS", "warning"));
+  if (cache.key_short) cacheNode.append(` #${cache.key_short}`);
+  appendMetric(metrics, "Cache", cacheNode);
+
+  appendMetric(metrics, "Timing", `${timing.redaction}ms / ${timing.normalization}ms / ${timing.optimize_llm}ms`);
+  appendMetric(metrics, "Redactions", redactionSummary);
+
+  const checksNode = checks.enabled
+    ? badge(checksPassed ? "PASS" : "ISSUES", checksPassed ? "success" : "error")
+    : badge("OFF");
+  appendMetric(metrics, "Checks", checksNode);
+  appendMetric(metrics, "Budget", `${usage.daily_remaining_tokens} remaining`);
+  appendMetric(metrics, "RPM", `${usage.rpm_used}/${usage.rpm_limit}`);
 
   if (redactionPreviews) {
-    const previews = document.createElement("div");
-    previews.className = "metric";
-    previews.innerHTML = `<strong>Redaction previews</strong><span>${redactionPreviews}</span>`;
-    metrics.appendChild(previews);
+    appendMetric(metrics, "Redaction previews", redactionPreviews);
   }
 
   exchange.dataset.metricsJson = JSON.stringify(report, null, 2);
@@ -322,7 +365,7 @@ async function sendCompile(message, exchange) {
 
   const res = await fetch("/api/compile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
 
@@ -374,18 +417,26 @@ function renderHistory(entries) {
     item.className = "history-item";
     const timestamp = new Date(entry.timestamp).toLocaleString();
     const savings = entry.report?.tokens?.saved_pct ?? 0;
-    item.innerHTML = `
-      <header>
-        <span>${timestamp}</span>
-        <span>${savings}% saved</span>
-      </header>
-      <div class="history-body">${entry.compiledPrompt}</div>
-      <div class="action-row">
-        <button class="ghost" data-role="copy-history">Copy compiled</button>
-      </div>
-    `;
+    const header = document.createElement("header");
+    const timestampNode = document.createElement("span");
+    timestampNode.textContent = timestamp;
+    const savingsNode = document.createElement("span");
+    savingsNode.textContent = `${savings}% saved`;
+    header.append(timestampNode, savingsNode);
 
-    const copyBtn = item.querySelector('[data-role="copy-history"]');
+    const body = document.createElement("div");
+    body.className = "history-body";
+    body.textContent = entry.compiledPrompt || "";
+
+    const actionRow = document.createElement("div");
+    actionRow.className = "action-row";
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "ghost";
+    copyBtn.type = "button";
+    copyBtn.textContent = "Copy compiled";
+    actionRow.appendChild(copyBtn);
+    item.append(header, body, actionRow);
+
     copyBtn.addEventListener("click", async () => {
       const ok = await copyText(entry.compiledPrompt || "");
       flashButton(copyBtn, ok ? "Copied" : "Copy failed");
@@ -410,7 +461,7 @@ function wireEvents() {
   });
   elements.userId.addEventListener("change", () => {
     state.userId = elements.userId.value.trim();
-    localStorage.setItem("promptcompiler_userId", state.userId);
+    localStorage.setItem("promptgate_userId", state.userId);
     fetchState();
     fetchHistory();
   });

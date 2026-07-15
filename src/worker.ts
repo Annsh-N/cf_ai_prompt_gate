@@ -27,6 +27,15 @@ function withCors(response: Response): Response {
   });
 }
 
+function jsonError(status: number, code: string, error: string): Response {
+  return withCors(
+    new Response(JSON.stringify({ error, code }), {
+      status,
+      headers: { "content-type": "application/json" },
+    })
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -46,22 +55,12 @@ export default {
             userId = typeof candidate === "string" ? candidate : null;
           }
         } catch {
-          return withCors(
-            new Response(JSON.stringify({ error: "Invalid JSON" }), {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            })
-          );
+          return jsonError(400, "invalid_json", "Invalid JSON");
         }
       }
 
       if (!userId) {
-        return withCors(
-          new Response(JSON.stringify({ error: "Missing userId" }), {
-            status: 400,
-            headers: { "content-type": "application/json" },
-          })
-        );
+        return jsonError(400, "missing_user_id", "Missing userId");
       }
 
       const id = env.USER_STATE.idFromName(userId);

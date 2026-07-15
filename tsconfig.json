@@ -4,10 +4,10 @@
     "module": "ES2022",
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "WebWorker"],
-    "types": ["@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types", "node"],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src", "tests", "scripts", "vitest.config.ts", "vitest.worker.config.ts"]
 }

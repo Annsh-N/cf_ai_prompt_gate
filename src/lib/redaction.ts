@@ -43,17 +43,6 @@ const COMMON_SECRET_PATTERNS: Pattern[] = [
   {
     type: "secret",
     label: "SECRET",
-    regex: /\b(password|pass|api_key|apikey|token|secret|authorization|bearer)\b\s*[:=]\s*(['"]?)([^\s'"&]+)\2/gi,
-    replace: (match, placeholder, groups) => {
-      const keyMatch = match.match(/^(\s*[^:=]+?[:=]\s*)/i);
-      const key = keyMatch ? keyMatch[1] : "";
-      return `${key}${placeholder}`;
-    },
-    extract: (_match, groups) => groups[2] ?? "",
-  },
-  {
-    type: "secret",
-    label: "SECRET",
     regex: /\bAuthorization\s*:\s*Bearer\s+([A-Za-z0-9._~+/=-]{10,})/gi,
     replace: (match, placeholder, groups) => {
       const prefix = match.match(/^\s*Authorization\s*:\s*Bearer\s+/i)?.[0] ?? "";
@@ -67,6 +56,17 @@ const COMMON_SECRET_PATTERNS: Pattern[] = [
     regex: /\bBearer\s+([A-Za-z0-9._~+/=-]{10,})/gi,
     replace: (match, placeholder) => match.replace(/\s+[^\s]+$/, ` ${placeholder}`),
     extract: (_match, groups) => groups[0] ?? "",
+  },
+  {
+    type: "secret",
+    label: "SECRET",
+    regex: /\b(password|pass|api_key|apikey|token|secret|authorization|bearer)\b\s*[:=]\s*(['"]?)([^\s'"&]+)\2/gi,
+    replace: (match, placeholder, groups) => {
+      const keyMatch = match.match(/^(\s*[^:=]+?[:=]\s*)/i);
+      const key = keyMatch ? keyMatch[1] : "";
+      return `${key}${placeholder}`;
+    },
+    extract: (_match, groups) => groups[2] ?? "",
   },
 ];
 
