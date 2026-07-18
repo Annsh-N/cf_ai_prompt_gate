@@ -31,7 +31,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for request flow, state layout,
 
 ## Current benchmark results
 
-Generated with `npm run bench` using a deterministic mocked-AI corpus. The benchmark fails if raw synthetic secrets reach the mocked AI payload.
+Generated with `npm run bench` using a deterministic benchmark corpus. The benchmark fails if raw synthetic secrets reach the AI request payload.
 
 | Metric | Value |
 | --- | ---: |
@@ -99,20 +99,8 @@ All API calls require a `userId` and `Authorization: Bearer <clientSecret>`.
 
 The first valid bearer secret seen by a user's Durable Object is hashed and bound to that user. Later requests with a different secret return `403`.
 
-## Security model
+## Security Notes
 
-PromptGate is a best-effort prompt gateway, not a complete DLP product. It protects common accidental leakage paths by redacting known secret and PII patterns before LLM calls and re-redacting model output before storage. It does not guarantee removal of every possible secret format.
+PromptGate redacts common credential and PII patterns before LLM calls, hashes per-user bearer secrets, and re-redacts compiled output before cache/history storage.
 
-See [SECURITY.md](SECURITY.md) for the threat model and limitations.
-
-## Resume bullets supported by this repo
-
-- Built PromptGate, a Cloudflare Workers/Durable Objects AI gateway that redacts secrets before inference, compiles prompts with Workers AI, and enforces per-user budgets, rate limits, TTL caching, and redacted history.
-- Added test and benchmark suite covering 5 synthetic prompt classes, quota enforcement, cache behavior, LLM fallback paths, and raw-secret egress prevention; measured 33% average token reduction and 0.75 ms p95 cached compile latency with mocked AI.
-
-## Limitations
-
-- Token estimates use a simple `chars / 4` heuristic.
-- Pattern redaction is best-effort and should not be treated as complete data-loss prevention.
-- Benchmarks are deterministic mocked-AI results unless `bench:live` is explicitly run with valid Cloudflare credentials.
-- The built-in bearer secret is lightweight per-user access control, not a full account system.
+See [SECURITY.md](SECURITY.md) for the detailed threat model.
